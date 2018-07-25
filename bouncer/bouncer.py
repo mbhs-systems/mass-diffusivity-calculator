@@ -1,34 +1,30 @@
 import pybullet as p
 import time
 
-# Setup pybullet
 p.connect(p.GUI)
-p.setRealTimeSimulation(0)
-p.setGravity(0, 0, 0)	# ignore gravity since this is orientation-agnostic
 
-# Load PF particle shape
-target = p.loadURDF('../meshes/in.urdf')	# TODO actually convert to URDF
+sphereRadius = 0.05
+mass = 1
+visualShapeId = -1
+orn = p.getQuaternionFromEuler([1.5707963,0,0])
+useMaximalCoordinates = 0
+shift = [0,-0.02,0]
 
-# Setup air molecule to shoot at the particle (dummy values for now)
-air_rad = 0.05
-air_mass = 0.001
-col_sphere_id = p.createCollisionShape(p.GEOM_SPHERE, radius=air_rad, mass=air_mass)
-air_lin_vel = [1, 1, 1]
+target = p.createCollisionShape(p.GEOM_SPHERE, radius=0.5)
+
+tuid = p.createMultiBody(mass,target,visualShapeId,[0,0,0],useMaximalCoordinates=useMaximalCoordinates)
+
+air_rad = 0.15
+air_mass = 0.01
+proj = p.createCollisionShape(p.GEOM_SPHERE, radius=air_rad)
+air_lin_vel = [0, 0, -1]
 air_ang_vel = [0, 0, 0]
-p.resetBaseVelocity(air, air_lin_vel, air_ang_vel)
+puid = p.createMultiBody(air_mass,proj,visualShapeId,[0,0,.9],useMaximalCoordinates=useMaximalCoordinates)
+p.resetBaseVelocity(puid, air_lin_vel, air_ang_vel)
 
-# Run simulation as long as you want
-# TODO figure out how to simulate more precisely than real-time
-sim_time = 1
-while (time.time() - sim_time < 0):
-	p.stepSimulation()
+p.setGravity(0, 0, 0)	# ignore gravity since this is orientation-agnostic
+p.setRealTimeSimulation(1)
 
-lin_vel = p.getLinearVelocity(target)
-ang_vel = p.getAngularVelocity(target)
-
-print 'Linear Velocity: ' + str(lin_vel)
-print 'Angular Velocity: ' + str(ang_vel)
-
-# Teardown pybullet
-p.resetSimulation()
-p.disconnect()
+while (1):
+    keys = p.getKeyboardEvents()
+    time.sleep(0.01)
