@@ -26,5 +26,6 @@ p.setGravity(0, 0, 0)	# ignore gravity since this is orientation-agnostic
 p.setRealTimeSimulation(1)
 
 while (1):
+    print 'My base vel: ' + str(p.getBaseVelocity(tuid))
     keys = p.getKeyboardEvents()
     time.sleep(0.01)
