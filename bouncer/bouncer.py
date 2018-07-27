@@ -1,15 +1,23 @@
 #! /usr/bin/env python
 import pybullet as p
 import time
-import thread
+import threading
+import multiprocessing
 
-gst=time.time()
+gst = time.time()
 
 SP = {'t_rad' : 0.5, 't_m' : 1, 't_pos' : [0, 0, 0],'p_rad': 0.15, 'p_m' : 0.01, 'p_pos': [0, 0, 0.9],'lv' : [0, 0, -1],'av' : [0, 0, 0], 'sim_time' : 5000, 'pci': 0}
 SP1 = {'t_rad' : 0.5, 't_m' : 1, 't_pos' : [0, 0, 0],'p_rad': 0.15, 'p_m' : 0.01, 'p_pos': [0, 0, 0.9],'lv' : [0, 0, -1],'av' : [0, 0, 0], 'sim_time' : 5000, 'pci': 1}
 
-p.connect(p.DIRECT, options="physicsClientId=0")
-p.connect(p.DIRECT, options="physicsClientId=1")
+class BouncerThread(threading.Thread):
+    def __init__(self, sp):
+        threading.Thread.__init__(self)
+        self.sp = sp
+
+    def run(self):
+        p.connect(p.DIRECT, options="physicsClientId=" + str(self.sp['pci']))
+        simulate(self.sp)
+        print 'time: ' + str(time.time() - gst)
 
 def simulate(sp):
     # Global body params
@@ -41,12 +49,18 @@ def simulate(sp):
         time.sleep(0.001)
 
     print 'bv' + str(sp['pci']) + ': ' + str(p.getBaseVelocity(tuid, physicsClientId=sp['pci']))
-    print 'time: ' + str(time.time() - gst)
     return p.getBaseVelocity(tuid, physicsClientId=sp['pci'])
 
 if __name__ == '__main__':
-    thread.start_new_thread(simulate, (SP,))
-    thread.start_new_thread(simulate, (SP1,))
- 
-    while 1:
-        pass
+    lock = threading.Lock()
+    threads = []
+
+    for i in range(multiprocessing.cpu_count()):
+        th = BouncerThread(SP)
+        th.start()
+        threads.append(th)
+
+    for t in threads:
+        t.join()
+
+    print 'All done'
